@@ -162,8 +162,6 @@
 
       const handleAudio = () => {
         if (!audioRef.current) {
-          const url = getAudioUrl(passage);
-          if (!url) return;
           audioRef.current = new Audio();
           audioRef.current.addEventListener("ended", () => setPlaying(false));
           audioRef.current.addEventListener("error", () => {
@@ -176,21 +174,18 @@
           setPlaying(false);
         } else {
           const url = getAudioUrl(passage);
-          if (audioRef.current.src !== url) {
-            audioRef.current.src = url;
-            audioRef.current.setRequestHeader = null;
-          }
-          // ESV API requires auth header — use fetch to get redirect URL
-          fetch(getAudioUrl(passage), {
+          if (!url) return;
+          // ESV API requires auth header — fetch as blob and use object URL
+          fetch(url, {
             headers: { Authorization: `Token ${ESV_API_KEY}` },
-            redirect: "follow",
           })
             .then((res) => {
               if (!res.ok) throw new Error("Audio error");
-              return res.url;
+              return res.blob();
             })
-            .then((audioUrl) => {
-              audioRef.current.src = audioUrl;
+            .then((blob) => {
+              const objectUrl = URL.createObjectURL(blob);
+              audioRef.current.src = objectUrl;
               audioRef.current.play();
               setPlaying(true);
             })
