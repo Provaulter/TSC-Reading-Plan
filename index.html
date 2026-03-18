@@ -70,8 +70,7 @@
     }
 
     function getAudioUrl(query) {
-      if (!ESV_API_KEY) return null;
-      return `https://api.esv.org/v3/passage/audio/?q=${encodeURIComponent(query)}`;
+      return `https://audio.esv.org/hw/${encodeURIComponent(query)}.mp3`;
     }
 
     // ============================================================
@@ -164,9 +163,9 @@
         if (!audioRef.current) {
           audioRef.current = new Audio();
           audioRef.current.addEventListener("ended", () => setPlaying(false));
-          audioRef.current.addEventListener("error", (e) => {
-            console.error("Audio element error:", e);
+          audioRef.current.addEventListener("error", () => {
             setPlaying(false);
+            alert("Unable to play audio. Check your connection.");
           });
         }
         if (playing) {
@@ -174,26 +173,12 @@
           setPlaying(false);
         } else {
           const url = getAudioUrl(passage);
-          if (!url) return;
-          setPlaying(true);
-          // ESV API requires auth header — fetch as blob and use object URL
-          fetch(url, {
-            headers: { Authorization: `Token ${ESV_API_KEY}` },
-          })
-            .then((res) => {
-              console.log("Audio response:", res.status, res.headers.get("content-type"));
-              if (!res.ok) throw new Error(`Audio fetch failed: ${res.status}`);
-              return res.arrayBuffer();
-            })
-            .then((buf) => {
-              const blob = new Blob([buf], { type: "audio/mp3" });
-              audioRef.current.src = URL.createObjectURL(blob);
-              return audioRef.current.play();
-            })
-            .catch((err) => {
-              console.error("Audio playback error:", err);
+          audioRef.current.src = url;
+          audioRef.current.play()
+            .then(() => setPlaying(true))
+            .catch(() => {
               setPlaying(false);
-              alert("Unable to play audio. Check browser console for details.");
+              alert("Unable to play audio.");
             });
         }
       };
