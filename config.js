@@ -12,7 +12,7 @@
 // ============================================================
 
 window.APP_CONFIG = {
-  ESV_API_KEY: "YOUR_ESV_API_KEY_HERE",
+  ESV_API_KEY: b50879db96b04a1e7c7c70f38c8b25ebcf113064,
 
   PLAN_FILES: [
     "plans/daily-2026.json",
