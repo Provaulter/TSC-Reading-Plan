@@ -164,9 +164,9 @@
         if (!audioRef.current) {
           audioRef.current = new Audio();
           audioRef.current.addEventListener("ended", () => setPlaying(false));
-          audioRef.current.addEventListener("error", () => {
+          audioRef.current.addEventListener("error", (e) => {
+            console.error("Audio element error:", e);
             setPlaying(false);
-            alert("Unable to play audio. Check your connection.");
           });
         }
         if (playing) {
@@ -175,21 +175,26 @@
         } else {
           const url = getAudioUrl(passage);
           if (!url) return;
+          setPlaying(true);
           // ESV API requires auth header — fetch as blob and use object URL
           fetch(url, {
             headers: { Authorization: `Token ${ESV_API_KEY}` },
           })
             .then((res) => {
-              if (!res.ok) throw new Error("Audio error");
-              return res.blob();
+              console.log("Audio response:", res.status, res.headers.get("content-type"));
+              if (!res.ok) throw new Error(`Audio fetch failed: ${res.status}`);
+              return res.arrayBuffer();
             })
-            .then((blob) => {
-              const objectUrl = URL.createObjectURL(blob);
-              audioRef.current.src = objectUrl;
-              audioRef.current.play();
-              setPlaying(true);
+            .then((buf) => {
+              const blob = new Blob([buf], { type: "audio/mp3" });
+              audioRef.current.src = URL.createObjectURL(blob);
+              return audioRef.current.play();
             })
-            .catch(() => alert("Unable to play audio."));
+            .catch((err) => {
+              console.error("Audio playback error:", err);
+              setPlaying(false);
+              alert("Unable to play audio. Check browser console for details.");
+            });
         }
       };
 
